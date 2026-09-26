@@ -1,0 +1,2829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="theme-color"
+        content="#071a16"
+    >
+
+    <title>BeeGuard | Smart Beehive Monitoring</title>
+
+    <!-- Google Font -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- Font Awesome -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    >
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+
+        /* =====================================================
+           GLOBAL
+        ===================================================== */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #061512;
+            --bg-soft: #0a1f1a;
+            --panel: rgba(14, 39, 32, 0.82);
+            --panel-2: rgba(18, 49, 40, 0.72);
+
+            --border: rgba(255, 255, 255, 0.08);
+
+            --text: #f4fff9;
+            --muted: #91aaa1;
+
+            --green: #38e59a;
+            --green-dark: #15966c;
+
+            --yellow: #f7c948;
+            --orange: #ff9f43;
+            --red: #ff5c70;
+            --blue: #54b9ff;
+            --purple: #a980ff;
+
+            --shadow:
+                0 20px 60px rgba(0, 0, 0, 0.35);
+
+            --radius: 22px;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: "Inter", sans-serif;
+            color: var(--text);
+
+            background:
+                radial-gradient(
+                    circle at 10% 10%,
+                    rgba(56, 229, 154, 0.10),
+                    transparent 28%
+                ),
+                radial-gradient(
+                    circle at 90% 10%,
+                    rgba(247, 201, 72, 0.08),
+                    transparent 28%
+                ),
+                linear-gradient(
+                    145deg,
+                    #04100d,
+                    #071a16 45%,
+                    #05120f
+                );
+
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+
+            background-image:
+                linear-gradient(
+                    rgba(255,255,255,0.015) 1px,
+                    transparent 1px
+                ),
+                linear-gradient(
+                    90deg,
+                    rgba(255,255,255,0.015) 1px,
+                    transparent 1px
+                );
+
+            background-size: 40px 40px;
+
+            mask-image:
+                linear-gradient(
+                    to bottom,
+                    black,
+                    transparent 80%
+                );
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        button {
+            font-family: inherit;
+        }
+
+        .container {
+            width: min(1400px, calc(100% - 36px));
+            margin: auto;
+        }
+
+
+        /* =====================================================
+           HEADER
+        ===================================================== */
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+
+            background:
+                rgba(4, 16, 13, 0.82);
+
+            border-bottom:
+                1px solid var(--border);
+        }
+
+        .nav {
+            min-height: 78px;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            gap: 20px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+        }
+
+        .brand-icon {
+            width: 46px;
+            height: 46px;
+
+            display: grid;
+            place-items: center;
+
+            border-radius: 15px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #f7c948,
+                    #ff9f43
+                );
+
+            color: #241800;
+
+            font-size: 23px;
+
+            box-shadow:
+                0 8px 30px rgba(247, 201, 72, 0.18);
+        }
+
+        .brand-text h1 {
+            font-family: "Outfit", sans-serif;
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .brand-text span {
+            display: block;
+
+            margin-top: 2px;
+
+            font-size: 11px;
+            color: var(--muted);
+            letter-spacing: 0.5px;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .live-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+
+            padding: 9px 13px;
+
+            border: 1px solid rgba(56, 229, 154, 0.2);
+
+            border-radius: 30px;
+
+            background:
+                rgba(56, 229, 154, 0.07);
+
+            color: var(--green);
+
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+
+            border-radius: 50%;
+
+            background: var(--green);
+
+            box-shadow:
+                0 0 0 5px rgba(56, 229, 154, 0.10),
+                0 0 18px rgba(56, 229, 154, 0.8);
+
+            animation: pulse 1.8s infinite;
+        }
+
+        @keyframes pulse {
+
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(0.75);
+                opacity: 0.55;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+
+        /* =====================================================
+           HERO
+        ===================================================== */
+
+        .hero {
+            padding: 46px 0 30px;
+        }
+
+        .hero-content {
+            display: grid;
+            grid-template-columns: 1fr auto;
+
+            align-items: center;
+
+            gap: 30px;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+
+            padding: 7px 12px;
+
+            border-radius: 20px;
+
+            background:
+                rgba(247, 201, 72, 0.08);
+
+            border:
+                1px solid rgba(247, 201, 72, 0.16);
+
+            color: var(--yellow);
+
+            font-size: 11px;
+            font-weight: 700;
+
+            text-transform: uppercase;
+
+            letter-spacing: 1px;
+        }
+
+        .hero h2 {
+            margin-top: 16px;
+
+            font-family: "Outfit", sans-serif;
+
+            font-size: clamp(
+                32px,
+                5vw,
+                58px
+            );
+
+            line-height: 1.04;
+
+            letter-spacing: -2px;
+        }
+
+        .hero h2 span {
+            color: var(--green);
+        }
+
+        .hero-description {
+            max-width: 720px;
+
+            margin-top: 16px;
+
+            color: var(--muted);
+
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .hero-status {
+            min-width: 230px;
+
+            padding: 22px;
+
+            border-radius: var(--radius);
+
+            border: 1px solid var(--border);
+
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(255,255,255,0.055),
+                    rgba(255,255,255,0.015)
+                );
+
+            box-shadow: var(--shadow);
+        }
+
+        .hero-status-label {
+            color: var(--muted);
+
+            font-size: 11px;
+
+            text-transform: uppercase;
+
+            letter-spacing: 1px;
+        }
+
+        .hero-status-value {
+            margin-top: 10px;
+
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+            font-family: "Outfit", sans-serif;
+
+            font-size: 25px;
+            font-weight: 800;
+        }
+
+        .status-circle {
+            width: 13px;
+            height: 13px;
+
+            border-radius: 50%;
+
+            background: var(--green);
+
+            box-shadow:
+                0 0 15px currentColor;
+        }
+
+        .status-time {
+            margin-top: 9px;
+
+            color: var(--muted);
+
+            font-size: 11px;
+        }
+
+
+        /* =====================================================
+           SENSOR CARDS
+        ===================================================== */
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            margin: 16px 0 14px;
+        }
+
+        .section-title h3 {
+            font-family: "Outfit", sans-serif;
+
+            font-size: 19px;
+            font-weight: 700;
+        }
+
+        .section-title span {
+            color: var(--muted);
+            font-size: 11px;
+        }
+
+        .sensor-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(4, minmax(0, 1fr));
+
+            gap: 16px;
+        }
+
+        .sensor-card {
+            position: relative;
+
+            min-height: 185px;
+
+            padding: 22px;
+
+            overflow: hidden;
+
+            border:
+                1px solid var(--border);
+
+            border-radius: var(--radius);
+
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(255,255,255,0.055),
+                    rgba(255,255,255,0.018)
+                );
+
+            box-shadow: var(--shadow);
+
+            transition:
+                transform 0.25s ease,
+                border-color 0.25s ease;
+        }
+
+        .sensor-card:hover {
+            transform: translateY(-4px);
+
+            border-color:
+                rgba(255,255,255,0.16);
+        }
+
+        .sensor-card::after {
+            content: "";
+
+            position: absolute;
+
+            width: 110px;
+            height: 110px;
+
+            right: -35px;
+            bottom: -35px;
+
+            border-radius: 50%;
+
+            background:
+                var(--card-color);
+
+            opacity: 0.08;
+
+            filter: blur(10px);
+        }
+
+        .temperature {
+            --card-color: var(--orange);
+        }
+
+        .humidity {
+            --card-color: var(--blue);
+        }
+
+        .sound {
+            --card-color: var(--purple);
+        }
+
+        .weight {
+            --card-color: var(--yellow);
+        }
+
+        .card-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sensor-icon {
+            width: 43px;
+            height: 43px;
+
+            display: grid;
+            place-items: center;
+
+            border-radius: 14px;
+
+            background:
+                color-mix(
+                    in srgb,
+                    var(--card-color) 12%,
+                    transparent
+                );
+
+            color: var(--card-color);
+
+            font-size: 17px;
+        }
+
+        .sensor-label {
+            color: var(--muted);
+
+            font-size: 11px;
+
+            font-weight: 600;
+
+            text-transform: uppercase;
+
+            letter-spacing: 0.8px;
+        }
+
+        .sensor-value {
+            margin-top: 19px;
+
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+        }
+
+        .sensor-value strong {
+            font-family: "Outfit", sans-serif;
+
+            font-size: 36px;
+
+            line-height: 1;
+
+            font-weight: 800;
+
+            letter-spacing: -1.5px;
+        }
+
+        .sensor-value span {
+            color: var(--muted);
+
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .sensor-footer {
+            position: absolute;
+
+            left: 22px;
+            right: 22px;
+            bottom: 18px;
+
+            display: flex;
+            justify-content: space-between;
+
+            color: var(--muted);
+
+            font-size: 10px;
+        }
+
+        .sensor-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .indicator-dot {
+            width: 6px;
+            height: 6px;
+
+            border-radius: 50%;
+
+            background: var(--green);
+        }
+
+
+        /* =====================================================
+           STATUS PANEL
+        ===================================================== */
+
+        .status-panel {
+            margin-top: 18px;
+
+            padding: 22px 25px;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            gap: 20px;
+
+            border-radius: var(--radius);
+
+            border:
+                1px solid rgba(56, 229, 154, 0.15);
+
+            background:
+                linear-gradient(
+                    110deg,
+                    rgba(56,229,154,0.07),
+                    rgba(255,255,255,0.025)
+                );
+        }
+
+        .status-info {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .large-status-icon {
+            width: 50px;
+            height: 50px;
+
+            display: grid;
+            place-items: center;
+
+            border-radius: 16px;
+
+            background:
+                rgba(56,229,154,0.1);
+
+            color: var(--green);
+
+            font-size: 20px;
+        }
+
+        .status-info h4 {
+            font-family: "Outfit", sans-serif;
+            font-size: 16px;
+        }
+
+        .status-info p {
+            margin-top: 4px;
+
+            color: var(--muted);
+
+            font-size: 11px;
+        }
+
+        .status-badge {
+            min-width: 120px;
+
+            padding: 11px 17px;
+
+            text-align: center;
+
+            border-radius: 30px;
+
+            font-size: 11px;
+            font-weight: 800;
+
+            letter-spacing: 0.8px;
+
+            background:
+                rgba(56,229,154,0.10);
+
+            color: var(--green);
+
+            border:
+                1px solid rgba(56,229,154,0.2);
+        }
+
+
+        /* =====================================================
+           CHARTS
+        ===================================================== */
+
+        .charts-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(2, minmax(0, 1fr));
+
+            gap: 18px;
+
+            margin-top: 18px;
+        }
+
+        .chart-card {
+            min-width: 0;
+
+            padding: 21px;
+
+            border-radius: var(--radius);
+
+            border:
+                1px solid var(--border);
+
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(255,255,255,0.045),
+                    rgba(255,255,255,0.015)
+                );
+
+            box-shadow: var(--shadow);
+        }
+
+        .chart-header {
+            display: flex;
+
+            align-items: flex-start;
+
+            justify-content: space-between;
+
+            gap: 15px;
+
+            margin-bottom: 16px;
+        }
+
+        .chart-title {
+            font-family: "Outfit", sans-serif;
+
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .chart-subtitle {
+            margin-top: 4px;
+
+            color: var(--muted);
+
+            font-size: 10px;
+        }
+
+        .chart-badge {
+            padding: 6px 9px;
+
+            border-radius: 8px;
+
+            background:
+                rgba(255,255,255,0.05);
+
+            color: var(--muted);
+
+            font-size: 9px;
+        }
+
+        .chart-wrapper {
+            position: relative;
+
+            height: 260px;
+        }
+
+
+        /* =====================================================
+           SYSTEM INFORMATION
+        ===================================================== */
+
+        .system-grid {
+            display: grid;
+
+            grid-template-columns:
+                1.3fr 1fr 1fr;
+
+            gap: 18px;
+
+            margin-top: 18px;
+        }
+
+        .info-card {
+            padding: 22px;
+
+            border-radius: var(--radius);
+
+            border:
+                1px solid var(--border);
+
+            background:
+                rgba(255,255,255,0.025);
+        }
+
+        .info-heading {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+
+            margin-bottom: 18px;
+
+            font-family: "Outfit", sans-serif;
+
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .info-heading i {
+            color: var(--green);
+        }
+
+        .info-row {
+            display: flex;
+
+            justify-content: space-between;
+
+            gap: 20px;
+
+            padding: 11px 0;
+
+            border-bottom:
+                1px solid rgba(255,255,255,0.05);
+
+            font-size: 11px;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-row span:first-child {
+            color: var(--muted);
+        }
+
+        .info-row span:last-child {
+            text-align: right;
+
+            font-weight: 600;
+        }
+
+        .connected {
+            color: var(--green) !important;
+        }
+
+        .disconnected {
+            color: var(--red) !important;
+        }
+
+
+        /* =====================================================
+           FOOTER
+        ===================================================== */
+
+        footer {
+            margin-top: 45px;
+            padding: 25px 0 35px;
+
+            border-top:
+                1px solid var(--border);
+        }
+
+        .footer-inner {
+            display: flex;
+
+            justify-content: space-between;
+            align-items: center;
+
+            gap: 20px;
+        }
+
+        .footer-brand {
+            font-family: "Outfit", sans-serif;
+
+            font-weight: 700;
+
+            font-size: 14px;
+        }
+
+        .footer-brand span {
+            color: var(--yellow);
+        }
+
+        .footer-text {
+            color: var(--muted);
+
+            font-size: 10px;
+        }
+
+
+        /* =====================================================
+           LOADING
+        ===================================================== */
+
+        .loading {
+            opacity: 0.55;
+        }
+
+        .error-message {
+            display: none;
+
+            margin-top: 15px;
+
+            padding: 14px 18px;
+
+            border-radius: 14px;
+
+            background:
+                rgba(255,92,112,0.08);
+
+            border:
+                1px solid rgba(255,92,112,0.15);
+
+            color: var(--red);
+
+            font-size: 11px;
+        }
+
+
+        /* =====================================================
+           RESPONSIVE
+        ===================================================== */
+
+        @media (max-width: 1100px) {
+
+            .sensor-grid {
+                grid-template-columns:
+                    repeat(2, 1fr);
+            }
+
+            .system-grid {
+                grid-template-columns:
+                    1fr 1fr;
+            }
+
+            .system-grid .info-card:first-child {
+                grid-column: 1 / -1;
+            }
+        }
+
+
+        @media (max-width: 800px) {
+
+            .container {
+                width:
+                    min(
+                        100% - 24px,
+                        680px
+                    );
+            }
+
+            .hero-content {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-status {
+                width: 100%;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .system-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .system-grid .info-card:first-child {
+                grid-column: auto;
+            }
+        }
+
+
+        @media (max-width: 560px) {
+
+            .nav {
+                min-height: 68px;
+            }
+
+            .brand-icon {
+                width: 40px;
+                height: 40px;
+
+                font-size: 19px;
+            }
+
+            .brand-text h1 {
+                font-size: 18px;
+            }
+
+            .brand-text span {
+                font-size: 9px;
+            }
+
+            .live-pill {
+                padding: 8px 10px;
+            }
+
+            .live-pill span:last-child {
+                display: none;
+            }
+
+            .hero {
+                padding-top: 30px;
+            }
+
+            .hero h2 {
+                font-size: 36px;
+                letter-spacing: -1.5px;
+            }
+
+            .hero-description {
+                font-size: 12px;
+            }
+
+            .sensor-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .sensor-card {
+                min-height: 170px;
+            }
+
+            .status-panel {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .status-badge {
+                width: 100%;
+            }
+
+            .chart-card {
+                padding: 16px;
+            }
+
+            .chart-wrapper {
+                height: 220px;
+            }
+
+            .footer-inner {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+    </style>
+</head>
+
+
+<body>
+
+<!-- =========================================================
+     HEADER
+========================================================= -->
+
+<header class="topbar">
+
+    <div class="container nav">
+
+        <div class="brand">
+
+            <div class="brand-icon">
+                <i class="fa-solid fa-bee"></i>
+            </div>
+
+            <div class="brand-text">
+
+                <h1>BeeGuard</h1>
+
+                <span>
+                    SMART BEEHIVE MONITORING SYSTEM
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div class="nav-right">
+
+            <div class="live-pill">
+
+                <span class="live-dot"></span>
+
+                <span>LIVE MONITORING</span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</header>
+
+
+<!-- =========================================================
+     MAIN
+========================================================= -->
+
+<main>
+
+<div class="container">
+
+
+    <!-- HERO -->
+
+    <section class="hero">
+
+        <div class="hero-content">
+
+            <div>
+
+                <div class="eyebrow">
+
+                    <i class="fa-solid fa-satellite-dish"></i>
+
+                    IoT Hive Intelligence
+
+                </div>
+
+
+                <h2>
+
+                    Protect the hive.<br>
+
+                    <span>Understand the colony.</span>
+
+                </h2>
+
+
+                <p class="hero-description">
+
+                    BeeGuard continuously monitors the hive environment
+                    using temperature, humidity, sound activity and
+                    weight sensors. Live readings are collected through
+                    ThingSpeak and presented in this intelligent dashboard.
+
+                </p>
+
+            </div>
+
+
+            <div class="hero-status">
+
+                <div class="hero-status-label">
+                    Hive Condition
+                </div>
+
+                <div class="hero-status-value">
+
+                    <span
+                        id="heroStatusCircle"
+                        class="status-circle">
+                    </span>
+
+                    <span id="heroStatus">
+                        CONNECTING
+                    </span>
+
+                </div>
+
+                <div
+                    class="status-time"
+                    id="lastUpdated">
+
+                    Waiting for data...
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+
+    <!-- SENSOR SECTION -->
+
+    <div class="section-title">
+
+        <h3>Live Hive Parameters</h3>
+
+        <span id="readingCount">
+            Waiting for ThingSpeak...
+        </span>
+
+    </div>
+
+
+    <section class="sensor-grid">
+
+
+        <!-- TEMPERATURE -->
+
+        <article class="sensor-card temperature">
+
+            <div class="card-top">
+
+                <div>
+
+                    <div class="sensor-label">
+                        Temperature
+                    </div>
+
+                </div>
+
+                <div class="sensor-icon">
+
+                    <i class="fa-solid fa-temperature-half"></i>
+
+                </div>
+
+            </div>
+
+
+            <div class="sensor-value">
+
+                <strong id="temperature">
+                    --
+                </strong>
+
+                <span>°C</span>
+
+            </div>
+
+
+            <div class="sensor-footer">
+
+                <span>
+                    DHT11 Sensor
+                </span>
+
+                <span class="sensor-indicator">
+
+                    <span class="indicator-dot"></span>
+
+                    Active
+
+                </span>
+
+            </div>
+
+        </article>
+
+
+
+        <!-- HUMIDITY -->
+
+        <article class="sensor-card humidity">
+
+            <div class="card-top">
+
+                <div>
+
+                    <div class="sensor-label">
+                        Humidity
+                    </div>
+
+                </div>
+
+                <div class="sensor-icon">
+
+                    <i class="fa-solid fa-droplet"></i>
+
+                </div>
+
+            </div>
+
+
+            <div class="sensor-value">
+
+                <strong id="humidity">
+                    --
+                </strong>
+
+                <span>%</span>
+
+            </div>
+
+
+            <div class="sensor-footer">
+
+                <span>
+                    DHT11 Sensor
+                </span>
+
+                <span class="sensor-indicator">
+
+                    <span class="indicator-dot"></span>
+
+                    Active
+
+                </span>
+
+            </div>
+
+        </article>
+
+
+
+        <!-- SOUND -->
+
+        <article class="sensor-card sound">
+
+            <div class="card-top">
+
+                <div>
+
+                    <div class="sensor-label">
+                        Bee Activity
+                    </div>
+
+                </div>
+
+                <div class="sensor-icon">
+
+                    <i class="fa-solid fa-wave-square"></i>
+
+                </div>
+
+            </div>
+
+
+            <div class="sensor-value">
+
+                <strong id="sound">
+                    --
+                </strong>
+
+                <span>%</span>
+
+            </div>
+
+
+            <div class="sensor-footer">
+
+                <span>
+                    Microphone Sensor
+                </span>
+
+                <span class="sensor-indicator">
+
+                    <span class="indicator-dot"></span>
+
+                    Monitoring
+
+                </span>
+
+            </div>
+
+        </article>
+
+
+
+        <!-- WEIGHT -->
+
+        <article class="sensor-card weight">
+
+            <div class="card-top">
+
+                <div>
+
+                    <div class="sensor-label">
+                        Hive Weight
+                    </div>
+
+                </div>
+
+                <div class="sensor-icon">
+
+                    <i class="fa-solid fa-weight-hanging"></i>
+
+                </div>
+
+            </div>
+
+
+            <div class="sensor-value">
+
+                <strong id="weight">
+                    --
+                </strong>
+
+                <span>kg</span>
+
+            </div>
+
+
+            <div class="sensor-footer">
+
+                <span>
+                    Load Cell + HX711
+                </span>
+
+                <span class="sensor-indicator">
+
+                    <span class="indicator-dot"></span>
+
+                    Active
+
+                </span>
+
+            </div>
+
+        </article>
+
+    </section>
+
+
+
+    <!-- ERROR -->
+
+    <div
+        id="errorMessage"
+        class="error-message">
+
+        <i class="fa-solid fa-triangle-exclamation"></i>
+
+        Unable to retrieve ThingSpeak data.
+
+    </div>
+
+
+
+    <!-- STATUS -->
+
+    <section class="status-panel">
+
+        <div class="status-info">
+
+            <div
+                id="largeStatusIcon"
+                class="large-status-icon">
+
+                <i class="fa-solid fa-shield-heart"></i>
+
+            </div>
+
+
+            <div>
+
+                <h4 id="statusTitle">
+                    Hive monitoring active
+                </h4>
+
+                <p id="statusDescription">
+                    Waiting for the latest sensor information.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div
+            id="statusBadge"
+            class="status-badge">
+
+            CONNECTING
+
+        </div>
+
+    </section>
+
+
+
+    <!-- CHARTS -->
+
+    <div class="section-title">
+
+        <h3>Environmental Trends</h3>
+
+        <span>
+            Historical ThingSpeak Data
+        </span>
+
+    </div>
+
+
+    <section class="charts-grid">
+
+
+        <!-- TEMPERATURE CHART -->
+
+        <article class="chart-card">
+
+            <div class="chart-header">
+
+                <div>
+
+                    <div class="chart-title">
+                        Temperature
+                    </div>
+
+                    <div class="chart-subtitle">
+                        Hive temperature history
+                    </div>
+
+                </div>
+
+                <div class="chart-badge">
+                    FIELD 1
+                </div>
+
+            </div>
+
+
+            <div class="chart-wrapper">
+
+                <canvas id="temperatureChart"></canvas>
+
+            </div>
+
+        </article>
+
+
+
+        <!-- HUMIDITY CHART -->
+
+        <article class="chart-card">
+
+            <div class="chart-header">
+
+                <div>
+
+                    <div class="chart-title">
+                        Humidity
+                    </div>
+
+                    <div class="chart-subtitle">
+                        Relative humidity history
+                    </div>
+
+                </div>
+
+                <div class="chart-badge">
+                    FIELD 2
+                </div>
+
+            </div>
+
+
+            <div class="chart-wrapper">
+
+                <canvas id="humidityChart"></canvas>
+
+            </div>
+
+        </article>
+
+
+
+        <!-- SOUND CHART -->
+
+        <article class="chart-card">
+
+            <div class="chart-header">
+
+                <div>
+
+                    <div class="chart-title">
+                        Bee Activity
+                    </div>
+
+                    <div class="chart-subtitle">
+                        Relative sound activity
+                    </div>
+
+                </div>
+
+                <div class="chart-badge">
+                    FIELD 3
+                </div>
+
+            </div>
+
+
+            <div class="chart-wrapper">
+
+                <canvas id="soundChart"></canvas>
+
+            </div>
+
+        </article>
+
+
+
+        <!-- WEIGHT CHART -->
+
+        <article class="chart-card">
+
+            <div class="chart-header">
+
+                <div>
+
+                    <div class="chart-title">
+                        Hive Weight
+                    </div>
+
+                    <div class="chart-subtitle">
+                        Colony / hive weight history
+                    </div>
+
+                </div>
+
+                <div class="chart-badge">
+                    FIELD 4
+                </div>
+
+            </div>
+
+
+            <div class="chart-wrapper">
+
+                <canvas id="weightChart"></canvas>
+
+            </div>
+
+        </article>
+
+    </section>
+
+
+
+    <!-- SYSTEM INFORMATION -->
+
+    <div class="section-title">
+
+        <h3>System Information</h3>
+
+        <span>
+            BeeGuard IoT Network
+        </span>
+
+    </div>
+
+
+    <section class="system-grid">
+
+
+        <!-- CHANNEL -->
+
+        <article class="info-card">
+
+            <div class="info-heading">
+
+                <i class="fa-solid fa-cloud"></i>
+
+                ThingSpeak Channel
+
+            </div>
+
+
+            <div class="info-row">
+
+                <span>
+                    Channel Name
+                </span>
+
+                <span id="channelName">
+                    --
+                </span>
+
+            </div>
+
+
+            <div class="info-row">
+
+                <span>
+                    Channel ID
+                </span>
+
+                <span id="channelId">
+                    --
+                </span>
+
+            </div>
+
+
+            <div class="info-row">
+
+                <span>
+                    Last Entry
+                </span>
+
+                <span id="lastEntry">
+                    --
+                </span>
+
+            </div>
+
+
+        </article>
+
+
+
+        <!-- CONNECTION -->
+
+        <article class="info-card">
+
+            <div class="info-heading">
+
+                <i class="fa-solid fa-network-wired"></i>
+
+                Data Connection
+
+            </div>
+
+
+            <div class="info-row">
+
+                <span>
+                    Flask Server
+                </span>
+
+                <span class="connected">
+                    ONLINE
+                </span>
+
+            </div>
+
+
+            <div class="info-row">
+
+                <span>
+                    ThingSpeak
+                </span>
+
+                <span id="thingspeakStatus">
+                    CHECKING
+                </span>
+
+            </div>
+
+
+            <div class="info-row">
+
+                <span>
+                    Auto Refresh
+                </span>
+
+                <span>
+                    20 seconds
+                </span>
+
+            </div>
+
+
+        </article>
+
+
+
+        <!-- SENSORS -->
+
+        <article class="info-card">
+
+            <div class="info-heading">
+
+                <i class="fa-solid fa-microchip"></i>
+
+                Sensors
+
+            </div>
+
+
+            <div class="info-row">
+
+                <span>
+                    Temperature
+                </span>
+
+                <span>
+                    DHT11
+                </span>
+
+            </div>
+
+
+            <div class="info-row">
+
+                <span>
+                    Activity
+                </span>
+
+                <span>
+                    Microphone
+                </span>
+
+            </div>
+
+
+            <div class="info-row">
+
+                <span>
+                    Weight
+                </span>
+
+                <span>
+                    HX711
+                </span>
+
+            </div>
+
+        </article>
+
+
+    </section>
+
+
+</div>
+
+</main>
+
+
+
+<!-- =========================================================
+     FOOTER
+========================================================= -->
+
+<footer>
+
+    <div class="container footer-inner">
+
+        <div class="footer-brand">
+
+            <span>🐝</span>
+            BeeGuard
+
+        </div>
+
+        <div class="footer-text">
+
+            Smart Beehive Monitoring • ESP32 • ThingSpeak • Flask
+
+        </div>
+
+        <div class="footer-text">
+
+            <span id="footerTime">
+                --
+            </span>
+
+        </div>
+
+    </div>
+
+</footer>
+
+
+
+<!-- =========================================================
+     JAVASCRIPT
+========================================================= -->
+
+<script>
+
+    /* =========================================================
+       GLOBAL CHART VARIABLES
+    ========================================================= */
+
+    let temperatureChart = null;
+    let humidityChart = null;
+    let soundChart = null;
+    let weightChart = null;
+
+
+    /* =========================================================
+       CHART CONFIGURATION
+    ========================================================= */
+
+    Chart.defaults.font.family = "Inter";
+
+    Chart.defaults.color = "#91aaa1";
+
+
+    function createChart(
+        canvasId,
+        label,
+        data,
+        labels,
+        color,
+        unit
+    ) {
+
+        const canvas =
+            document.getElementById(canvasId);
+
+        if (!canvas) {
+            return null;
+        }
+
+
+        const ctx =
+            canvas.getContext("2d");
+
+
+        const gradient =
+            ctx.createLinearGradient(
+                0,
+                0,
+                0,
+                260
+            );
+
+
+        gradient.addColorStop(
+            0,
+            color + "40"
+        );
+
+
+        gradient.addColorStop(
+            1,
+            color + "00"
+        );
+
+
+        return new Chart(
+            ctx,
+            {
+
+                type: "line",
+
+                data: {
+
+                    labels: labels,
+
+                    datasets: [
+
+                        {
+
+                            label: label,
+
+                            data: data,
+
+                            borderColor: color,
+
+                            backgroundColor: gradient,
+
+                            borderWidth: 2.5,
+
+                            fill: true,
+
+                            tension: 0.42,
+
+                            pointRadius: 0,
+
+                            pointHoverRadius: 5,
+
+                            pointHoverBorderWidth: 2,
+
+                            pointHoverBackgroundColor:
+                                "#071a16",
+
+                            pointHoverBorderColor:
+                                color
+
+                        }
+
+                    ]
+
+                },
+
+
+                options: {
+
+                    responsive: true,
+
+                    maintainAspectRatio: false,
+
+                    interaction: {
+
+                        intersect: false,
+
+                        mode: "index"
+
+                    },
+
+
+                    plugins: {
+
+                        legend: {
+
+                            display: false
+
+                        },
+
+
+                        tooltip: {
+
+                            backgroundColor:
+                                "#0a211b",
+
+                            borderColor:
+                                "rgba(255,255,255,0.1)",
+
+                            borderWidth: 1,
+
+                            padding: 12,
+
+                            titleColor:
+                                "#f4fff9",
+
+                            bodyColor:
+                                "#91aaa1",
+
+                            displayColors: false,
+
+                            callbacks: {
+
+                                label: function(context) {
+
+                                    return (
+                                        context.parsed.y +
+                                        " " +
+                                        unit
+                                    );
+
+                                }
+
+                            }
+
+                        }
+
+                    },
+
+
+                    scales: {
+
+                        x: {
+
+                            grid: {
+
+                                display: false
+
+                            },
+
+                            ticks: {
+
+                                color: "#6f8980",
+
+                                maxTicksLimit: 7,
+
+                                font: {
+
+                                    size: 9
+
+                                }
+
+                            }
+
+                        },
+
+
+                        y: {
+
+                            beginAtZero: false,
+
+                            grid: {
+
+                                color:
+                                    "rgba(255,255,255,0.05)"
+
+                            },
+
+                            border: {
+
+                                display: false
+
+                            },
+
+                            ticks: {
+
+                                color: "#6f8980",
+
+                                font: {
+
+                                    size: 9
+
+                                }
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* =========================================================
+       FORMAT DATE
+    ========================================================= */
+
+    function formatDate(dateString) {
+
+        if (!dateString) {
+            return "--";
+        }
+
+
+        try {
+
+            const date =
+                new Date(dateString);
+
+
+            return date.toLocaleString(
+                [],
+                {
+                    day: "2-digit",
+                    month: "short",
+                    hour: "2-digit",
+                    minute: "2-digit"
+                }
+            );
+
+        }
+
+        catch {
+
+            return dateString;
+
+        }
+
+    }
+
+
+    /* =========================================================
+       UPDATE STATUS
+    ========================================================= */
+
+    function updateStatus(status) {
+
+        const heroStatus =
+            document.getElementById(
+                "heroStatus"
+            );
+
+        const statusBadge =
+            document.getElementById(
+                "statusBadge"
+            );
+
+        const statusTitle =
+            document.getElementById(
+                "statusTitle"
+            );
+
+        const statusDescription =
+            document.getElementById(
+                "statusDescription"
+            );
+
+        const circle =
+            document.getElementById(
+                "heroStatusCircle"
+            );
+
+        const icon =
+            document.getElementById(
+                "largeStatusIcon"
+            );
+
+
+        status =
+            (status || "NORMAL")
+            .toUpperCase();
+
+
+        heroStatus.textContent =
+            status;
+
+        statusBadge.textContent =
+            status;
+
+
+        if (status === "ALERT") {
+
+            document.documentElement
+                .style.setProperty(
+                    "--status-color",
+                    "#ff5c70"
+                );
+
+
+            circle.style.background =
+                "#ff5c70";
+
+
+            circle.style.color =
+                "#ff5c70";
+
+
+            statusBadge.style.color =
+                "#ff5c70";
+
+
+            statusBadge.style.background =
+                "rgba(255,92,112,0.10)";
+
+
+            statusBadge.style.borderColor =
+                "rgba(255,92,112,0.20)";
+
+
+            icon.style.color =
+                "#ff5c70";
+
+
+            icon.style.background =
+                "rgba(255,92,112,0.10)";
+
+
+            statusTitle.textContent =
+                "Hive requires attention";
+
+
+            statusDescription.textContent =
+                "The latest sensor readings indicate an alert condition.";
+
+        }
+
+
+        else if (status === "ATTENTION") {
+
+            circle.style.background =
+                "#f7c948";
+
+
+            circle.style.color =
+                "#f7c948";
+
+
+            statusBadge.style.color =
+                "#f7c948";
+
+
+            statusBadge.style.background =
+                "rgba(247,201,72,0.10)";
+
+
+            statusBadge.style.borderColor =
+                "rgba(247,201,72,0.20)";
+
+
+            icon.style.color =
+                "#f7c948";
+
+
+            icon.style.background =
+                "rgba(247,201,72,0.10)";
+
+
+            statusTitle.textContent =
+                "Hive needs observation";
+
+
+            statusDescription.textContent =
+                "One or more monitored parameters need attention.";
+
+        }
+
+
+        else {
+
+            circle.style.background =
+                "#38e59a";
+
+
+            circle.style.color =
+                "#38e59a";
+
+
+            statusBadge.style.color =
+                "#38e59a";
+
+
+            statusBadge.style.background =
+                "rgba(56,229,154,0.10)";
+
+
+            statusBadge.style.borderColor =
+                "rgba(56,229,154,0.20)";
+
+
+            icon.style.color =
+                "#38e59a";
+
+
+            icon.style.background =
+                "rgba(56,229,154,0.10)";
+
+
+            statusTitle.textContent =
+                "Hive monitoring active";
+
+
+            statusDescription.textContent =
+                "Current monitored parameters are within the configured normal range.";
+
+        }
+
+    }
+
+
+    /* =========================================================
+       LOAD LATEST DATA
+    ========================================================= */
+
+    async function loadLatest() {
+
+        try {
+
+            const response =
+                await fetch(
+                    "/api/latest",
+                    {
+                        cache: "no-store"
+                    }
+                );
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    "Latest API unavailable"
+                );
+
+            }
+
+
+            const result =
+                await response.json();
+
+
+            if (!result.success) {
+
+                throw new Error(
+                    "No latest data"
+                );
+
+            }
+
+
+            const data =
+                result.data;
+
+
+            /* VALUES */
+
+            document.getElementById(
+                "temperature"
+            ).textContent =
+                data.temperature !== null
+                    ? Number(data.temperature).toFixed(1)
+                    : "--";
+
+
+            document.getElementById(
+                "humidity"
+            ).textContent =
+                data.humidity !== null
+                    ? Number(data.humidity).toFixed(1)
+                    : "--";
+
+
+            document.getElementById(
+                "sound"
+            ).textContent =
+                data.sound !== null
+                    ? Number(data.sound).toFixed(1)
+                    : "--";
+
+
+            document.getElementById(
+                "weight"
+            ).textContent =
+                data.weight !== null
+                    ? Number(data.weight).toFixed(2)
+                    : "--";
+
+
+            /* STATUS */
+
+            updateStatus(
+                data.status
+            );
+
+
+            /* TIME */
+
+            document.getElementById(
+                "lastUpdated"
+            ).textContent =
+                "Last reading: " +
+                formatDate(
+                    data.created_at
+                );
+
+
+            document.getElementById(
+                "thingspeakStatus"
+            ).textContent =
+                "CONNECTED";
+
+
+            document.getElementById(
+                "thingspeakStatus"
+            ).className =
+                "connected";
+
+
+            document.getElementById(
+                "errorMessage"
+            ).style.display =
+                "none";
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "Latest data error:",
+                error
+            );
+
+
+            document.getElementById(
+                "thingspeakStatus"
+            ).textContent =
+                "OFFLINE";
+
+
+            document.getElementById(
+                "thingspeakStatus"
+            ).className =
+                "disconnected";
+
+
+            document.getElementById(
+                "errorMessage"
+            ).style.display =
+                "block";
+
+        }
+
+    }
+
+
+    /* =========================================================
+       LOAD HISTORICAL DATA
+    ========================================================= */
+
+    async function loadHistory() {
+
+        try {
+
+            const response =
+                await fetch(
+                    "/api/data",
+                    {
+                        cache: "no-store"
+                    }
+                );
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    "History API unavailable"
+                );
+
+            }
+
+
+            const result =
+                await response.json();
+
+
+            if (!result.success) {
+
+                throw new Error(
+                    "History unavailable"
+                );
+
+            }
+
+
+            const data =
+                result.data;
+
+
+            if (!data || data.length === 0) {
+
+                return;
+
+            }
+
+
+            /* =================================================
+               LABELS
+            ================================================= */
+
+            const labels =
+                data.map(
+                    item =>
+                        formatDate(
+                            item.created_at
+                        )
+                );
+
+
+            /* =================================================
+               VALUES
+            ================================================= */
+
+            const temperatures =
+                data.map(
+                    item =>
+                        item.temperature
+                );
+
+
+            const humidity =
+                data.map(
+                    item =>
+                        item.humidity
+                );
+
+
+            const sound =
+                data.map(
+                    item =>
+                        item.sound
+                );
+
+
+            const weight =
+                data.map(
+                    item =>
+                        item.weight
+                );
+
+
+            /* =================================================
+               DESTROY OLD CHARTS
+            ================================================= */
+
+            if (temperatureChart) {
+                temperatureChart.destroy();
+            }
+
+            if (humidityChart) {
+                humidityChart.destroy();
+            }
+
+            if (soundChart) {
+                soundChart.destroy();
+            }
+
+            if (weightChart) {
+                weightChart.destroy();
+            }
+
+
+            /* =================================================
+               CREATE CHARTS
+            ================================================= */
+
+            temperatureChart =
+                createChart(
+                    "temperatureChart",
+                    "Temperature",
+                    temperatures,
+                    labels,
+                    "#ff9f43",
+                    "°C"
+                );
+
+
+            humidityChart =
+                createChart(
+                    "humidityChart",
+                    "Humidity",
+                    humidity,
+                    labels,
+                    "#54b9ff",
+                    "%"
+                );
+
+
+            soundChart =
+                createChart(
+                    "soundChart",
+                    "Bee Activity",
+                    sound,
+                    labels,
+                    "#a980ff",
+                    "%"
+                );
+
+
+            weightChart =
+                createChart(
+                    "weightChart",
+                    "Hive Weight",
+                    weight,
+                    labels,
+                    "#f7c948",
+                    "kg"
+                );
+
+
+            /* COUNT */
+
+            document.getElementById(
+                "readingCount"
+            ).textContent =
+                data.length +
+                " recent readings";
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "History error:",
+                error
+            );
+
+        }
+
+    }
+
+
+    /* =========================================================
+       LOAD CHANNEL INFORMATION
+    ========================================================= */
+
+    async function loadChannel() {
+
+        try {
+
+            const response =
+                await fetch(
+                    "/api/channel",
+                    {
+                        cache: "no-store"
+                    }
+                );
+
+
+            if (!response.ok) {
+
+                throw new Error(
+                    "Channel API unavailable"
+                );
+
+            }
+
+
+            const result =
+                await response.json();
+
+
+            if (!result.success) {
+                return;
+            }
+
+
+            const channel =
+                result.channel;
+
+
+            document.getElementById(
+                "channelName"
+            ).textContent =
+                channel.name || "BeeGuard";
+
+
+            document.getElementById(
+                "channelId"
+            ).textContent =
+                channel.id || "--";
+
+
+            document.getElementById(
+                "lastEntry"
+            ).textContent =
+                channel.last_entry_id || "--";
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "Channel error:",
+                error
+            );
+
+        }
+
+    }
+
+
+    /* =========================================================
+       CLOCK
+    ========================================================= */
+
+    function updateClock() {
+
+        const now =
+            new Date();
+
+
+        document.getElementById(
+            "footerTime"
+        ).textContent =
+            now.toLocaleString(
+                [],
+                {
+                    dateStyle: "medium",
+                    timeStyle: "short"
+                }
+            );
+
+    }
+
+
+    /* =========================================================
+       INITIAL LOAD
+    ========================================================= */
+
+    async function initializeDashboard() {
+
+        await Promise.all([
+            loadLatest(),
+            loadHistory(),
+            loadChannel()
+        ]);
+
+        updateClock();
+
+    }
+
+
+    /* =========================================================
+       AUTO REFRESH
+    ========================================================= */
+
+    initializeDashboard();
+
+
+    /*
+       Latest readings:
+       refresh every 20 seconds.
+
+       This matches the ThingSpeak update
+       interval used by your ESP32.
+    */
+
+    setInterval(
+        loadLatest,
+        5000
+    );
+
+
+    /*
+       Historical charts:
+       refresh every 60 seconds.
+    */
+
+    setInterval(
+        loadHistory,
+        10000
+    );
+
+
+    /*
+       Channel information:
+       refresh every 60 seconds.
+    */
+
+    setInterval(
+        loadChannel,
+        60000
+    );
+
+
+    /*
+       Footer clock
+    */
+
+    setInterval(
+        updateClock,
+        1000
+    );
+
+
+</script>
+
+</body>
+</html>
